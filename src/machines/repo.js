@@ -1,5 +1,5 @@
 import { assign, interpret, Machine } from 'xstate';
-import { getIssueDetails, getRepoDetails, getRepoIssues } from '../utils';
+import { getRepoDetails, getRepoIssues } from '../utils';
 
 const repoMachine = Machine({
   id: 'repoMachine',
@@ -56,26 +56,11 @@ const repoMachine = Machine({
         onError: 'FAILURE',
       },
     },
-    FETCHING_ISSUE_DETAILS: {
-      invoke: {
-        src: (_, e) => getIssueDetails(e.data),
-        onDone: {
-          actions: [
-            assign({
-              details: (_, e) => e.data,
-            })
-          ],
-          target: 'SUCCESS',
-        },
-        onError: 'FAILURE',
-      },
-    },
     SUCCESS: {},
     FAILURE: {},
   },
   on: {
     fetchIssues: 'FETCHING_ISSUES',
-    fetchIssueDetails: 'FETCHING_ISSUE_DETAILS',
   }
 });
 

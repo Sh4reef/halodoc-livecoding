@@ -1,4 +1,4 @@
-import { useService } from '@xstate/react';
+import { useSelector } from '@xstate/react';
 import { Badge, Form } from 'react-bootstrap';
 import BootstrapTable from 'react-bootstrap-table-next';
 import { useHistory } from 'react-router-dom';
@@ -12,20 +12,21 @@ import { useState } from 'react';
 const RepoDetails = () => {
   const history = useHistory();
   const [query, setQuery] = useState('');
-  const [repoState, repoSend] = useService(repoService);
 
-  const repo = repoState.context.data;
+  const repo = useSelector(repoService, (state) => state.context.data);
+  const issues = useSelector(repoService, (state) => state.context.data.issues);
+  const FETCHING_ISSUES = useSelector(repoService, (state) => state.matches('FETCHING_ISSUES'));
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    repoSend({type: 'fetchIssues', query})
+    repoService.send({type: 'fetchIssues', query})
   }
 
   const handleTableChange = (prev) => (type, { page, sizePerPage }) => {
     switch (type) {
       case 'pagination':
         if (prev.issues_page !== page) {
-          repoSend({type: 'fetchIssues', pagination: {page: page || prev.page, sizePerPage}, query: prev.issues_query})
+          repoService.send({type: 'fetchIssues', pagination: {page: page || prev.page, sizePerPage}, query: prev.issues_query})
         }
         break;
       default:
@@ -53,8 +54,8 @@ const RepoDetails = () => {
       { text: "5", value: 5 },
       { text: "10", value: 10 }
     ],
-    sizePerPage: repoState.context.data.issues_per_page,
-    page: repoState.context.data.issues_page,
+    sizePerPage: repo.issues_per_page,
+    page: repo.issues_page,
   };
 
   return (
@@ -68,7 +69,7 @@ const RepoDetails = () => {
 
       <div className="issues-list">
         <Badge variant="success">{repo.open_issues} Open</Badge>
-        {repo?.issues && (
+        {issues && (
           <PaginationProvider
             pagination={ paginationFactory(paginationOption) }
           >
@@ -78,7 +79,7 @@ const RepoDetails = () => {
                 paginationTableProps
               }) => (
                 <Pagination
-                  isLoading={['FETCHING_ISSUES'].some(repoState.matches)}
+                  isLoading={FETCHING_ISSUES}
                   paginationProps={paginationProps}
                 >
                   <BootstrapTable
@@ -89,7 +90,7 @@ const RepoDetails = () => {
                     columns={columns}
                     rowEvents={rowEvents}
                     onTableChange={handleTableChange(
-                      repoState.context.data
+                      repo
                     )}
                     { ...paginationTableProps }
                   />
